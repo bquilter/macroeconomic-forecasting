@@ -1,4 +1,4 @@
-from scripts.data.series_list import FRED_SERIES
+from scripts.config.series_list import FRED_SERIES
 from scripts.data.clean_fred_series import clean_and_save_series
 
 def run_batch():
