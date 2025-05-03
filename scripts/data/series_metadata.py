@@ -1,4 +1,4 @@
-from scripts.data.series_list import FRED_SERIES
+from scripts.config.series_list import FRED_SERIES
 from fredapi import Fred
 from dotenv import load_dotenv
 import pandas as pd

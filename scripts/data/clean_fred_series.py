@@ -3,14 +3,10 @@ from pathlib import Path
 from scripts.data.fetch_fred import get_or_fetch_series
 import argparse
 
-def clean_and_save_series(series_id: str, country_name: str = None, output_folder: str = "data/processed") -> pd.DataFrame:
+def clean_and_save_series(series_id: str, country_name: str = None, output_folder: str = "data/processed/individual") -> pd.DataFrame:
     """
-    Fetches a FRED series (from cache or API), cleans it, and saves to processed folder.
+    Fetches a FRED series (from cache or API), cleans it, and saves to processed/individual folder.
     """
-    from scripts.data.fetch_fred import get_or_fetch_series
-    from pathlib import Path
-    import pandas as pd
-
     # Fetch series
     series = get_or_fetch_series(series_id)
 
@@ -31,7 +27,7 @@ def clean_and_save_series(series_id: str, country_name: str = None, output_folde
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Fetch, clean, and save a FRED series.")
     parser.add_argument("series_id", help="FRED series ID (e.g., NZLCPIALLQINMEI)")
-    parser.add_argument("--output", default="data/processed", help="Output folder path (default: data/processed)")
+    parser.add_argument("--output", default="data/processed/individual", help="Output folder path")
 
     args = parser.parse_args()
 
