@@ -7,6 +7,13 @@ def run_merge():
     print("🔗 Merging cleaned CPI series into long format...")
     df_long = merge_series_long(FRED_SERIES)
 
+    # Year-on-Year % change
+    df_long["cpi_yoy"] = (
+        df_long.sort_values(["country", "date"])
+        .groupby("country")["cpi"]
+        .transform(lambda x: x.pct_change(periods=4) * 100)
+    )
+
     # Ensure output folder exists
     output_path = Path("data/processed/merged")
     output_path.mkdir(parents=True, exist_ok=True)
@@ -14,7 +21,7 @@ def run_merge():
     # Save to CSV
     out_file = output_path / "core_cpi_long.csv"
     df_long.to_csv(out_file, index=False)
-    print(f"✅ Saved merged long-format CPI: {out_file}")
+    print(f"✅ Saved merged long-format CPI with YoY change: {out_file}")
 
 if __name__ == "__main__":
     run_merge()

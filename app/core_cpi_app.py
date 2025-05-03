@@ -2,6 +2,7 @@ import pandas as pd
 import altair as alt
 import streamlit as st
 from pathlib import Path
+from datetime import date
 
 # Load data
 DATA_PATH = Path("data/processed/merged/core_cpi_long.csv")
@@ -13,15 +14,18 @@ def load_data():
 
 df = load_data()
 
-# App title and intro
+# App title
 st.title("🌍 Core CPI Dashboard")
-st.markdown("Visualise quarterly core CPI across countries (OECD, CPI excluding food and energy).")
+st.markdown("Visualise quarterly core CPI or Year-on-Year % change across countries (OECD, CPI excluding food and energy).")
 
-# Sidebar: Date filter
+# Country selector
+countries = df["country"].unique()
+selected_countries = st.multiselect("Select countries to compare:", sorted(countries), default=["New Zealand", "United Kingdom"])
+
+# Safe date slider using Python native date
 min_date = df["date"].min().date()
 max_date = df["date"].max().date()
-
-date_range = st.slider(
+start_date, end_date = st.slider(
     "Select date range:",
     min_value=min_date,
     max_value=max_date,
@@ -29,30 +33,32 @@ date_range = st.slider(
     format="YYYY-MM"
 )
 
-# Filter by date range
-df = df[(df["date"] >= pd.to_datetime(date_range[0])) & (df["date"] <= pd.to_datetime(date_range[1]))]
+# Convert back to pandas datetime
+start_ts = pd.to_datetime(start_date)
+end_ts = pd.to_datetime(end_date)
 
-# Country selector
-countries = df["country"].unique()
-selected_countries = st.multiselect(
-    "Select countries to compare:",
-    sorted(countries),
-    default=["New Zealand", "United Kingdom"]
-)
+# View toggle
+metric = st.radio("Select metric to display:", ["CPI", "YoY % change"], horizontal=True)
+y_column = "cpi" if metric == "CPI" else "cpi_yoy"
+y_title = "Core CPI" if y_column == "cpi" else "YoY % Change"
 
-# Filter by country
-df_filtered = df[df["country"].isin(selected_countries)]
+# Filter data
+df_filtered = df[
+    (df["country"].isin(selected_countries)) &
+    (df["date"] >= start_ts) &
+    (df["date"] <= end_ts)
+]
 
-# Altair chart
+# Chart
 chart = alt.Chart(df_filtered).mark_line().encode(
     x="date:T",
-    y="cpi:Q",
+    y=alt.Y(f"{y_column}:Q", title=y_title),
     color="country:N",
-    tooltip=["date:T", "country:N", "cpi:Q"]
+    tooltip=["date:T", "country:N", alt.Tooltip(y_column, format=".2f")]
 ).properties(
     width=800,
     height=400,
-    title="Quarterly Core CPI by Country"
+    title=f"Quarterly {y_title} by Country"
 ).interactive()
 
 st.altair_chart(chart, use_container_width=True)
