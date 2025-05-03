@@ -49,12 +49,53 @@ df_filtered = df[
     (df["date"] <= end_ts)
 ]
 
-# Chart
-chart = alt.Chart(df_filtered).mark_line().encode(
+# Altair hover tooltip logic
+hover = alt.selection_single(
+    fields=["date"],
+    nearest=True,
+    on="mouseover",
+    empty="none",
+    clear="mouseout"
+)
+
+# Tooltip config with dynamic label/format
+tooltip = [
+    alt.Tooltip("date:T", title="Date"),
+    alt.Tooltip("country:N", title="Country"),
+    alt.Tooltip(
+        y_column,
+        title="YoY Change (%)" if y_column == "cpi_yoy" else "Core CPI",
+        format=".1f" if y_column == "cpi_yoy" else ".2f"
+    )
+]
+
+# Base line chart
+line = alt.Chart(df_filtered).mark_line().encode(
     x="date:T",
     y=alt.Y(f"{y_column}:Q", title=y_title),
-    color="country:N",
-    tooltip=["date:T", "country:N", alt.Tooltip(y_column, format=".2f")]
+    color="country:N"
+)
+
+# Transparent selectors
+selectors = alt.Chart(df_filtered).mark_point().encode(
+    x="date:T",
+    opacity=alt.value(0),
+).add_selection(hover)
+
+# Circles at hovered point
+points = line.mark_circle().encode(
+    opacity=alt.condition(hover, alt.value(1), alt.value(0))
+)
+
+# Text labels on hover
+text = line.mark_text(align='left', dx=5, dy=-5).encode(
+    text=alt.Text(f"{y_column}:Q", format=".2f"),
+    opacity=alt.condition(hover, alt.value(1), alt.value(0))
+)
+
+# Combine layers
+chart = alt.layer(line, selectors, points, text).encode(
+    tooltip=tooltip
 ).properties(
     width=800,
     height=400,
